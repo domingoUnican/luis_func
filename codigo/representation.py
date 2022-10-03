@@ -1,6 +1,7 @@
 # coding: utf-8
 from dataclasses import dataclass, field
 from copy import deepcopy
+from collections import defaultdict
 
 @dataclass(frozen=True)
 class Node:
@@ -76,9 +77,10 @@ class BranchAndBound:
 
     """
     def __init__(self, physical, requests):
-        self.node_correspondance = dict()
+        self.node_correspondance = defaultdict(list)
         self.edge_correspondance = dict()
-        self.physical = deepcopy(physical)
+        self.original = deepcopy(physical)
+        self.physical = deepcopy(physical) # This is going to modify
         self.requests = deepcopy(requests)
         self.connect = dict()
         self.size = dict()
@@ -105,9 +107,38 @@ class BranchAndBound:
             self.connect[root1] = root2
             self.size[root2] += self.size[root1]
 
-    def completa(self):
-        for link in self.requests.get_nodes():
-            source, target = link.source, link.target
-            if not self.connect(source, target):
-                return False
+    def first_node_unassigned(self):
+        for node in self.requests.get_nodes():
+            if node not in self.node_correspondance:
+                return node
+        else:
+            return None
+
+    def first_link_unassigned(self):
+        for link in self.requests.get_edges():
+            path = self.edge_correspondance[link]
+            a, b = link.source, link.target
+            a, b = self.node_correspondance[a], self.node_correspondance[b]
+            if not path or path[0].source != a or path[-1].target != b:
+                return link
+        return None
+
+    def is_assigned(self):
+        if self.first_node_unassigned() != None or self.first_node_unassigned() != None:
+            return False
         return True
+
+    def DoC(self):
+        Agk = set()
+        for link, path in self.edge_correspondance.items():
+            Agk.update(set(path))
+        Pools = 0
+        for node in self.node_correspondance.values():
+            if isinstance(node, CentralUnit):
+                Pools += 1
+        return len(Agk)/Pools
+
+    def UoC(self):
+        
+    def cost(self):
+        return self.DoC() * (1 - self.UoC())

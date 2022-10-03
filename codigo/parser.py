@@ -1,6 +1,5 @@
 import sly
 from representation import *
-from collections import defaultdict
 
 class FuncSplitLexer(sly.Lexer):
     tokens = {KEYWORD, GRAPH, NODE, ID, LABEL, X, Y,
