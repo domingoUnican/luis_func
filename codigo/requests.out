@@ -1,0 +1,220 @@
+Grammar:
+
+Rule 0     S' -> net
+Rule 1     net -> GRAPH [ elements ]
+Rule 2     elements -> elements edge
+Rule 3     elements -> elements node
+Rule 4     elements -> <empty>
+Rule 5     node -> NODE [ attrs ]
+Rule 6     edge -> EDGE [ attrs ]
+Rule 7     attrs -> attrs KEYWORD STRING
+Rule 8     attrs -> attrs KEYWORD NUMBER
+Rule 9     attrs -> <empty>
+
+Unused terminals:
+
+    TYPE
+    PRC
+    BANDWITH
+    THETA
+    Y
+    PRB
+    X
+    ID
+    LABEL
+    TARGET
+    DELAY
+    SOURCE
+    DISTANCE
+    ANT
+
+Terminals, with rules where they appear:
+
+ANT                  : 
+BANDWITH             : 
+DELAY                : 
+DISTANCE             : 
+EDGE                 : 6
+GRAPH                : 1
+ID                   : 
+KEYWORD              : 7 8
+LABEL                : 
+NODE                 : 5
+NUMBER               : 8
+PRB                  : 
+PRC                  : 
+SOURCE               : 
+STRING               : 7
+TARGET               : 
+THETA                : 
+TYPE                 : 
+X                    : 
+Y                    : 
+[                    : 1 5 6
+]                    : 1 5 6
+error                : 
+
+Nonterminals, with rules where they appear:
+
+attrs                : 5 6 7 8
+edge                 : 2
+elements             : 1 2 3
+net                  : 0
+node                 : 3
+
+
+state 0
+
+    (0) S' -> . net
+    (1) net -> . GRAPH [ elements ]
+    GRAPH           shift and go to state 2
+
+    net                            shift and go to state 1
+
+state 1
+
+    (0) S' -> net .
+
+
+state 2
+
+    (1) net -> GRAPH . [ elements ]
+    [               shift and go to state 3
+
+
+state 3
+
+    (1) net -> GRAPH [ . elements ]
+    (2) elements -> . elements edge
+    (3) elements -> . elements node
+    (4) elements -> .
+    ]               reduce using rule 4 (elements -> .)
+    EDGE            reduce using rule 4 (elements -> .)
+    NODE            reduce using rule 4 (elements -> .)
+
+    elements                       shift and go to state 4
+
+state 4
+
+    (1) net -> GRAPH [ elements . ]
+    (2) elements -> elements . edge
+    (3) elements -> elements . node
+    (6) edge -> . EDGE [ attrs ]
+    (5) node -> . NODE [ attrs ]
+    ]               shift and go to state 5
+    EDGE            shift and go to state 8
+    NODE            shift and go to state 9
+
+    edge                           shift and go to state 6
+    node                           shift and go to state 7
+
+state 5
+
+    (1) net -> GRAPH [ elements ] .
+    $end            reduce using rule 1 (net -> GRAPH [ elements ] .)
+
+
+state 6
+
+    (2) elements -> elements edge .
+    ]               reduce using rule 2 (elements -> elements edge .)
+    EDGE            reduce using rule 2 (elements -> elements edge .)
+    NODE            reduce using rule 2 (elements -> elements edge .)
+
+
+state 7
+
+    (3) elements -> elements node .
+    ]               reduce using rule 3 (elements -> elements node .)
+    EDGE            reduce using rule 3 (elements -> elements node .)
+    NODE            reduce using rule 3 (elements -> elements node .)
+
+
+state 8
+
+    (6) edge -> EDGE . [ attrs ]
+    [               shift and go to state 10
+
+
+state 9
+
+    (5) node -> NODE . [ attrs ]
+    [               shift and go to state 11
+
+
+state 10
+
+    (6) edge -> EDGE [ . attrs ]
+    (7) attrs -> . attrs KEYWORD STRING
+    (8) attrs -> . attrs KEYWORD NUMBER
+    (9) attrs -> .
+    ]               reduce using rule 9 (attrs -> .)
+    KEYWORD         reduce using rule 9 (attrs -> .)
+
+    attrs                          shift and go to state 12
+
+state 11
+
+    (5) node -> NODE [ . attrs ]
+    (7) attrs -> . attrs KEYWORD STRING
+    (8) attrs -> . attrs KEYWORD NUMBER
+    (9) attrs -> .
+    ]               reduce using rule 9 (attrs -> .)
+    KEYWORD         reduce using rule 9 (attrs -> .)
+
+    attrs                          shift and go to state 13
+
+state 12
+
+    (6) edge -> EDGE [ attrs . ]
+    (7) attrs -> attrs . KEYWORD STRING
+    (8) attrs -> attrs . KEYWORD NUMBER
+    ]               shift and go to state 14
+    KEYWORD         shift and go to state 15
+
+
+state 13
+
+    (5) node -> NODE [ attrs . ]
+    (7) attrs -> attrs . KEYWORD STRING
+    (8) attrs -> attrs . KEYWORD NUMBER
+    ]               shift and go to state 16
+    KEYWORD         shift and go to state 15
+
+
+state 14
+
+    (6) edge -> EDGE [ attrs ] .
+    ]               reduce using rule 6 (edge -> EDGE [ attrs ] .)
+    EDGE            reduce using rule 6 (edge -> EDGE [ attrs ] .)
+    NODE            reduce using rule 6 (edge -> EDGE [ attrs ] .)
+
+
+state 15
+
+    (7) attrs -> attrs KEYWORD . STRING
+    (8) attrs -> attrs KEYWORD . NUMBER
+    STRING          shift and go to state 17
+    NUMBER          shift and go to state 18
+
+
+state 16
+
+    (5) node -> NODE [ attrs ] .
+    ]               reduce using rule 5 (node -> NODE [ attrs ] .)
+    EDGE            reduce using rule 5 (node -> NODE [ attrs ] .)
+    NODE            reduce using rule 5 (node -> NODE [ attrs ] .)
+
+
+state 17
+
+    (7) attrs -> attrs KEYWORD STRING .
+    ]               reduce using rule 7 (attrs -> attrs KEYWORD STRING .)
+    KEYWORD         reduce using rule 7 (attrs -> attrs KEYWORD STRING .)
+
+
+state 18
+
+    (8) attrs -> attrs KEYWORD NUMBER .
+    ]               reduce using rule 8 (attrs -> attrs KEYWORD NUMBER .)
+    KEYWORD         reduce using rule 8 (attrs -> attrs KEYWORD NUMBER .)
