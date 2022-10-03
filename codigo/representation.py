@@ -139,6 +139,6 @@ class BranchAndBound:
         return len(Agk)/Pools
 
     def UoC(self):
-        
+        pass
     def cost(self):
         return self.DoC() * (1 - self.UoC())
