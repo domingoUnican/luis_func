@@ -4,10 +4,13 @@ from copy import deepcopy
 from collections import defaultdict
 
 
-@dataclass(frozen=True, order=True)
+@dataclass(frozen=True)
 class Node:
     id: int
     label: str
+
+    def __lt__(self, a):
+        return self.id < a.id
 
     def __eq__(self, a):
         return self.id == a.id
@@ -121,7 +124,7 @@ class BranchAndBound:
         self.connect = dict()
         self.size = dict()
         for node in self.requests.get_nodes():
-            self.connect[node.id] = self.connect[node.id]
+            self.connect[node.id] = node.id
             self.size[node.id] = 1
 
     def root(self, id):
@@ -152,6 +155,7 @@ class BranchAndBound:
 
     def first_link_unassigned(self):
         for link in self.requests.get_edges():
+            print(f'link:{link}')
             if link not in self.edge_correspondance:
                 return None
             path = self.edge_correspondance[link]
@@ -230,6 +234,7 @@ class BranchAndBound:
                         check_nodes_unassigned = True
         if not check_nodes_unassigned:
             link = self.first_link_unassigned()
+            print(link)
             initial, destiny = 0, 0
             if link not in self.edge_correspondance:
                 self.initialize_connect()
