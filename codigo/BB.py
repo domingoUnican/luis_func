@@ -29,5 +29,6 @@ if __name__ == '__main__':
     in_ = f.read()
     lexer, parser = FuncSplitLexer(), RequestParser()
     j1 = parser.parse(lexer.tokenize(in_))
+    print(j1.get_edges())
     bb = BranchAndBound(j0, j1)
     print(start(bb))

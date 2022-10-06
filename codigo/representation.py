@@ -99,11 +99,11 @@ class Topology:
         self.dictionary["edges"][pos] = new_edge
 
     def modify_node_by_id(self, new_node):
-        for pos, i in enumerate(self.get_edges()):
-            if i == new_node:
+        for pos, i in enumerate(self.get_nodes()):
+            if i.id == new_node.id:
                 break
         else:
-            raise Exception("Edge not found")
+            raise Exception("Node not found")
         self.dictionary["nodes"][pos] = new_node
 
 
@@ -155,9 +155,8 @@ class BranchAndBound:
 
     def first_link_unassigned(self):
         for link in self.requests.get_edges():
-            print(f'link:{link}')
             if link not in self.edge_correspondance:
-                return None
+                return link
             path = self.edge_correspondance[link]
             a, b = link.source, link.target
             for temp1, temp2 in self.node_correspondance.items():
@@ -203,7 +202,7 @@ class BranchAndBound:
     def expand(self):
         check_nodes_unassigned = False
         for node in self.requests.get_nodes():
-            if all(node > i for i in self.node_correspondance):
+            if any(node < i for i in self.node_correspondance):
                 continue
             for target in self.physical.get_nodes():
                 aux = deepcopy(self)
@@ -230,19 +229,23 @@ class BranchAndBound:
                                                  target.y,
                                                  target.prc - node.prc)
                         aux.physical.modify_node_by_id(target_aux)
+                        aux.node_correspondance[node] = target_aux
                         yield aux
                         check_nodes_unassigned = True
         if not check_nodes_unassigned:
             link = self.first_link_unassigned()
-            print(link)
+            print(f'This is the link:{link}')
             initial, destiny = 0, 0
             if link not in self.edge_correspondance:
                 self.initialize_connect()
                 a = link.source
                 for temp1, temp2 in self.node_correspondance.items():
+                    print(f'temp1 and temp2:{temp1},{a}')
                     if temp1.id == a:
                         a = temp2
                         break
+                else:
+                    raise Exception("Not found end")    
                 initial = a.source
             else:
                 initial = self.edge_correspondance[link][-1].target
