@@ -12,6 +12,9 @@ class Node:
     def __lt__(self, a):
         return self.id < a.id
 
+    def __le__(self, a):
+        return self.id < a.id
+
     def __eq__(self, a):
         return self.id == a.id
 
@@ -92,7 +95,7 @@ class Topology:
 
     def modify_edge_by_id(self, new_edge):
         for pos, i in enumerate(self.get_edges()):
-            if i == new_edge:
+            if i.source  == new_edge.source and i.target == new_edge.target:
                 break
         else:
             raise Exception("Edge not found")
@@ -121,16 +124,16 @@ class BranchAndBound:
         self.initialize_connect()
 
     def initialize_connect(self):
-        self.connect = dict()
+        self.connect_dict = dict()
         self.size = dict()
-        for node in self.requests.get_nodes():
-            self.connect[node.id] = node.id
+        for node in self.physical.get_nodes():
+            self.connect_dict[node.id] = node.id
             self.size[node.id] = 1
 
     def root(self, id):
-        temp = self.connect[id]
+        temp = self.connect_dict[id]
         while temp != id:
-            temp, id = self.connect[temp], temp
+            temp, id = self.connect_dict[temp], temp
         return temp
 
     def is_connected(self, id1, id2):
@@ -140,10 +143,10 @@ class BranchAndBound:
         root1 = self.root(id1)
         root2 = self.root(id2)
         if self.size[root1] > self.size[root2]:
-            self.connect[root2] = root1
+            self.connect_dict[root2] = root1
             self.size[root1] += self.size[root2]
         else:
-            self.connect[root1] = root2
+            self.connect_dict[root1] = root2
             self.size[root2] += self.size[root1]
 
     def first_node_unassigned(self):
@@ -200,9 +203,8 @@ class BranchAndBound:
         return self.DoC() * (1 - self.UoC())
 
     def expand(self):
-        check_nodes_unassigned = False
         for node in self.requests.get_nodes():
-            if any(node < i for i in self.node_correspondance):
+            if any(node.id <= i.id for i in self.node_correspondance):
                 continue
             for target in self.physical.get_nodes():
                 aux = deepcopy(self)
@@ -221,7 +223,6 @@ class BranchAndBound:
                             aux.physical.modify_node_by_id(target_aux)
                             aux.node_correspondance[node] = target_aux
                             yield aux
-                            check_nodes_unassigned = True
                     elif isinstance(node, CentralUnit) and isinstance(target, CentralUnit):
                         target_aux = CentralUnit(target.id,
                                                  target.label,
@@ -231,22 +232,19 @@ class BranchAndBound:
                         aux.physical.modify_node_by_id(target_aux)
                         aux.node_correspondance[node] = target_aux
                         yield aux
-                        check_nodes_unassigned = True
-        if not check_nodes_unassigned:
+        if len(self.node_correspondance.keys()) == len(self.requests.get_nodes()):
             link = self.first_link_unassigned()
-            print(f'This is the link:{link}')
             initial, destiny = 0, 0
             if link not in self.edge_correspondance:
                 self.initialize_connect()
                 a = link.source
                 for temp1, temp2 in self.node_correspondance.items():
-                    print(f'temp1 and temp2:{temp1},{a}')
                     if temp1.id == a:
                         a = temp2
                         break
                 else:
-                    raise Exception("Not found end")    
-                initial = a.source
+                    raise Exception("Not found end")
+                initial = a.id
             else:
                 initial = self.edge_correspondance[link][-1].target
             for temp in self.physical.get_edge_by_source(initial):
@@ -261,6 +259,7 @@ class BranchAndBound:
                         aux.edge_correspondance[link] = [temp1]
                     else:
                         aux.edge_correspondance[link] += [temp1]
-                    aux.join(initial, destiny)
+                    destiny = temp.target
+                    aux.connect(initial, destiny)
                     aux.physical.modify_edge_by_id(temp1)
                     yield aux

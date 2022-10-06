@@ -92,6 +92,12 @@ class RequestParser(sly.Parser):
                                    p.attrs["prb"],
                                    p.attrs["ant"],
                                    p.attrs["theta"])
+        elif p.attrs["type"] == 3:
+            return CentralUnit(p.attrs["id"],
+                               p.attrs["label"],
+                               p.attrs["x"],
+                               p.attrs["y"],
+                               0)
         else:
             return CentralUnit(p.attrs["id"],
                                    p.attrs["label"],
@@ -103,7 +109,7 @@ class RequestParser(sly.Parser):
         return EdgeVirtual(p.attrs["source"],
                            p.attrs["target"],
                            p.attrs["bandwith"],
-                           p.attrs["delay"])
+                            p.attrs["delay"])
 
 
     @_('')
@@ -148,10 +154,13 @@ class PhysicalParser(sly.Parser):
         p.elements['nodes'].append(p.node)
         return p.elements
 
+
     @_('elements edge')
     def elements(self, p):
-        p.elements['edges'].append(p.edge)
+        p.elements['edges'].append(p.edge[0])
+        p.elements['edges'].append(p.edge[1])
         return p.elements
+
 
     @_('NODE "[" attrs "]"')
     def node(self, p):
@@ -173,11 +182,16 @@ class PhysicalParser(sly.Parser):
 
     @_('EDGE "[" attrs "]"')
     def edge(self, p):
-        return EdgePhysical(p.attrs["source"],
+        return (EdgePhysical(p.attrs["source"],
                             p.attrs["target"],
                             p.attrs["bandwith"],
                             p.attrs["distance"],
-                            p.attrs["type"])
+                             p.attrs["type"]),
+                EdgePhysical(p.attrs["target"],
+                            p.attrs["source"],
+                            p.attrs["bandwith"],
+                            p.attrs["distance"],
+                            p.attrs["type"]))
 
 
     @_('')

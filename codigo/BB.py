@@ -20,12 +20,12 @@ def start(p, sol=None, c=0):
 
 if __name__ == '__main__':
     DIR = "../instances"
-    f = open(f"{DIR}/networks/small/DU2CU1/Gn3e2.gml", 'r')
+    f = open(f"{DIR}/networks/small/DU2CU1/Gn5e7.gml", 'r')
     in_ = f.read()
     lexer, parser = FuncSplitLexer(), PhysicalParser()
     parser.shift = 10
     j0 = parser.parse(lexer.tokenize(in_))
-    f = open(f"{DIR}/requests/small/R1CUs2DUs5E5/R1n7e5.gml", 'r')
+    f = open(f"{DIR}/requests/small/R1CUs1DUs2E2/R1n3e2.gml", 'r')
     in_ = f.read()
     lexer, parser = FuncSplitLexer(), RequestParser()
     j1 = parser.parse(lexer.tokenize(in_))
