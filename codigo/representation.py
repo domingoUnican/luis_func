@@ -204,6 +204,8 @@ class BranchAndBound:
 
     def expand(self):
         for node in self.requests.get_nodes():
+            print(f'node:{node}')
+            print(f'node.keys:{self.node_correspondance.keys()}')
             if any(node.id <= i.id for i in self.node_correspondance):
                 continue
             for target in self.physical.get_nodes():
