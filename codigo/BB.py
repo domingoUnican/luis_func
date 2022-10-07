@@ -23,11 +23,12 @@ if __name__ == '__main__':
     f = open(f"{DIR}/networks/small/DU2CU1/Gn5e7.gml", 'r')
     in_ = f.read()
     lexer, parser = FuncSplitLexer(), PhysicalParser()
-    parser.shift = 10
+    parser.shift = 0
     j0 = parser.parse(lexer.tokenize(in_))
-    f = open(f"{DIR}/requests/small/R1CUs1DUs2E2/R1n3e2.gml", 'r')
+    f = open(f"{DIR}/requests/small/R1CUs2DUs5E5/little.gml", 'r')
     in_ = f.read()
     lexer, parser = FuncSplitLexer(), RequestParser()
+    parser.shift = 0
     j1 = parser.parse(lexer.tokenize(in_))
     print(j1.get_edges())
     bb = BranchAndBound(j0, j1)
