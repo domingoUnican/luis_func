@@ -175,10 +175,10 @@ class BranchAndBound:
         return None
 
     def is_assigned(self):
-        if self.first_node_unassigned() is not None or self.first_node_unassigned() is not None:
-            return False
-        return True
-
+        return ( len(self.node_correspondance.keys()) == len(self.requests.get_nodes())
+                 and
+                 len(self.edge_correspondance.keys()) == len(self.requests.get_edges())
+                 )
     def DoC(self):
         Agk = set()
         for link, path in self.edge_correspondance.items():
@@ -204,8 +204,6 @@ class BranchAndBound:
 
     def expand(self):
         for node in self.requests.get_nodes():
-            print(f'node:{node}')
-            print(f'node.keys:{self.node_correspondance.keys()}')
             if any(node.id <= i.id for i in self.node_correspondance):
                 continue
             for target in self.physical.get_nodes():
