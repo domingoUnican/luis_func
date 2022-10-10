@@ -40,7 +40,7 @@ class FuncSplitLexer(sly.Lexer):
             t.value = temp
             return t
         else:
-            print(f'Unknown keyword {t.value}')
+            print(f'Unknown keyword {t.value} in line {t.lineno}')
 
 
     @_(r'"\w+"')
