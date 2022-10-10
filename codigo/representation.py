@@ -208,10 +208,10 @@ class BranchAndBound:
                 continue
             for target in self.physical.get_nodes():
                 aux = deepcopy(self)
-                if node.prc < target.prc:
+                if node.prc <= target.prc:
                     if isinstance(node, DistributedUnit) and isinstance(target, DistributedUnit):
 
-                        if (node.prb < target.prb) and (node.ant < target.ant):
+                        if (node.prb <= target.prb) and (node.ant <= target.ant):
                             target_aux = DistributedUnit(target.id,
                                                          target.label,
                                                          target.x,
@@ -248,7 +248,7 @@ class BranchAndBound:
             else:
                 initial = self.edge_correspondance[link][-1].target
             for temp in self.physical.get_edge_by_source(initial):
-                if (not self.is_connected(initial, temp.target) and link.bandwith < temp.bandwith):
+                if (not self.is_connected(initial, temp.target) and link.bandwith <= temp.bandwith):
                     aux = deepcopy(self)
                     temp1 = EdgePhysical(temp.source,
                                          temp.target,

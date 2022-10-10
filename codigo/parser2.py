@@ -4,6 +4,7 @@ import pprint
 
 pp = pprint.PrettyPrinter(indent=4, width=80, underscore_numbers=False)
 
+
 class FuncSplitLexer(sly.Lexer):
     tokens = {KEYWORD, GRAPH, NODE, ID, LABEL, X, Y,
               PRC, SOURCE, TARGET, BANDWIDTH, TYPE,
