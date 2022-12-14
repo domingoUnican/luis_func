@@ -158,6 +158,8 @@ def UlMacPhy(params):
   fapi = params['L2L3']['FAPI_UL']
   return ((mtuPerTti*(mtu+hdr_pdcp+hdr_rlc+hdr_mac)*ntbs*8*1e3)/1e6)+fapi
 
+
+
 if __name__ == '__main__':
   config = configparser.ConfigParser()
   config.read('config.ini')
@@ -166,30 +168,52 @@ if __name__ == '__main__':
   iTbsUl = 20 # 16AM and highest I_MS
   
   params = Config2Dict(config)
-  cols = ['SPLIT', 'PRB', 'CAP']
+  cols = ['SPLIT', 'PRB', 'DR', 'DELAY', 'CU_CAP', 'DU_CAP']
   df = pd.DataFrame(columns=cols)
   # df = df.set_index('SPLIT')
   
 
-  for idx, prb in enumerate(N_PRBS):
-    params['L2L3']['TBS_DL'] = ITBS[iTbsDl][idx]
-    params['L2L3']['TBS_UL'] = ITBS[iTbsUl][idx]
+  # for idx, prb in enumerate(N_PRBS):
+    # params['L2L3']['TBS_DL'] = ITBS[iTbsDl][idx]
+    # params['L2L3']['TBS_UL'] = ITBS[iTbsUl][idx]
     
-    print('-- Uplink/downlink capacity requirements with {} PRBs'.format(prb))
+    # print('-- Uplink/downlink capacity requirements with {} PRBs'.format(prb))
 
-    df.loc[len(df.index)] = ['RRC_PDCP',  prb, DlRrcPdcp(params)  + UlRrcPdcp(params)]
-    df.loc[len(df.index)] = ['PDCP_RLC',  prb, DlPdcpRlc(params)  + UlPdcpRlc(params)]
-    df.loc[len(df.index)] = ['RLC_MAC',   prb, DlRlcMac(params)   + UlRlcMac(params)]
-    df.loc[len(df.index)] = ['INTRA_MAC', prb, DlIntraMac(params) + UlIntraMac(params)]
-    df.loc[len(df.index)] = ['MAC_PHY',   prb, DlMacPhy(params)   + UlMacPhy(params)]
+  #   df.loc[len(df.index)] = ['RRC_PDCP',  prb, DlRrcPdcp(params)  + UlRrcPdcp(params)]
+  #   df.loc[len(df.index)] = ['PDCP_RLC',  prb, DlPdcpRlc(params)  + UlPdcpRlc(params)]
+  #   df.loc[len(df.index)] = ['RLC_MAC',   prb, DlRlcMac(params)   + UlRlcMac(params)]
+  #   df.loc[len(df.index)] = ['INTRA_MAC', prb, DlIntraMac(params) + UlIntraMac(params)]
+  #   df.loc[len(df.index)] = ['MAC_PHY',   prb, DlMacPhy(params)   + UlMacPhy(params)]
+
+BW_ref = 100
+PR = 150
+NL = 8
+NL_ref = 8
+M = 256
+
+for idx, prb in enumerate(N_PRBS):
+
+
+df.loc[df['SPLIT'] == 'RRC_PDCP', 'DELAY'] = 30
+df.loc[df['SPLIT'] == 'PDCP_RLC', 'DELAY'] = 30
+df.loc[df['SPLIT'] == 'RLC_MAC', 'DELAY'] = 6
+df.loc[df['SPLIT'] == 'INTRA_MAC', 'DELAY'] = 6
+df.loc[df['SPLIT'] == 'MAC_PHY', 'DELAY'] = 2
+
+df.loc[df['SPLIT'] == 'RRC_PDCP', 'CU_CAP'] = 2.7
+df.loc[df['SPLIT'] == 'PDCP_RLC', 'CU_CAP'] = 4.7
+df.loc[df['SPLIT'] == 'RLC_MAC', 'CU_CAP'] = 6.7
+df.loc[df['SPLIT'] == 'INTRA_MAC', 'CU_CAP'] = 8.7
+df.loc[df['SPLIT'] == 'MAC_PHY', 'CU_CAP'] = 10.7
+
+df.loc[df['SPLIT'] == 'RRC_PDCP',   'DU_CAP'] = 18.3
+df.loc[df['SPLIT'] == 'PDCP_RLC',   'DU_CAP'] = 16.3
+df.loc[df['SPLIT'] == 'RLC_MAC',    'DU_CAP'] = 14.3
+df.loc[df['SPLIT'] == 'INTRA_MAC',  'DU_CAP'] = 12.3
+df.loc[df['SPLIT'] == 'MAC_PHY',    'DU_CAP'] = 10.3
+
 
 print(df.head(100))  
-
-df = df.pivot_table('CAP', ['SPLIT'], 'PRB')
-df['DELAY'] = [30, 30, 6,6,2]
-df['CU_CAP'] = [2.7, 4.7, 6.7, 8.7, 10.7]
-df['DU_CAP'] = [18.3, 16.3, 14.3, 12.3, 10.3]
-print(df.head()) 
 
 df.to_csv('params.csv', sep='\t', float_format='%0.4f')
 

@@ -13,40 +13,28 @@ Rule 9     attrs -> <empty>
 
 Unused terminals:
 
-    DELAY
-    LABEL
-    THETA
-    SOURCE
-    ANT
-    ID
-    DISTANCE
-    X
-    TARGET
     TYPE
-    PRB
-    BANDWITH
+    TARGET
+    OMEGA
+    X
+    SOURCE
+    ID
+    ETA
     Y
-    PRC
 
 Terminals, with rules where they appear:
 
-ANT                  : 
-BANDWITH             : 
-DELAY                : 
-DISTANCE             : 
 EDGE                 : 6
+ETA                  : 
 GRAPH                : 1
 ID                   : 
 KEYWORD              : 7 8
-LABEL                : 
 NODE                 : 5
 NUMBER               : 8
-PRB                  : 
-PRC                  : 
+OMEGA                : 
 SOURCE               : 
 STRING               : 7
 TARGET               : 
-THETA                : 
 TYPE                 : 
 X                    : 
 Y                    : 

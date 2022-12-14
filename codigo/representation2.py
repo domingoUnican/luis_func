@@ -7,7 +7,6 @@ from collections import defaultdict
 @dataclass(frozen=True)
 class Node:
     id: int
-    label: str
 
     def __lt__(self, a):
         return self.id < a.id
@@ -23,7 +22,7 @@ class Node:
 class Common(Node):
     x: float
     y: float
-    prc: int
+    omega: int
 
 
 # This represents both requests and physical CU
@@ -35,12 +34,12 @@ class CentralUnit(Common):
 # This represents both requests and physical DU
 @dataclass(frozen=True)
 class DistributedUnit(Common):
+    eta: int
     type: int = 1
 
 
 @dataclass(frozen=True)
 class Edge:
-
     source: int
     target: int
 
@@ -54,9 +53,16 @@ class Edge:
 
 @dataclass(frozen=True)
 class EdgePhysical(Edge):
-    bandwidth: float
-    delay: float
+    source: int
+    target: int
     type: int
+
+    def __lt__(self, a):
+        return (self.source < a.source or
+                (self.source == a.source and self.target < a.target))
+
+    def __eq__(self, a):
+        return self.source == a.source and self.target == a.target
 
 
 @dataclass(frozen=True)
@@ -207,7 +213,6 @@ class BranchAndBound:
                 if node.prc < target.prc:
                     if isinstance(node, DistributedUnit) and isinstance(target, DistributedUnit):
                         target_aux = DistributedUnit(target.id,
-                                                        target.label,
                                                          target.x,
                                                          target.y,
                                                          target.prc - node.prc,
@@ -219,7 +224,6 @@ class BranchAndBound:
                         yield aux
                     elif isinstance(node, CentralUnit) and isinstance(target, CentralUnit):
                         target_aux = CentralUnit(target.id,
-                                                 target.label,
                                                  target.x,
                                                  target.y,
                                                  target.prc - node.prc)
