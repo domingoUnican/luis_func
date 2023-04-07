@@ -7,7 +7,6 @@ from collections import defaultdict
 @dataclass(frozen=True)
 class Node:
     id: int
-    label: str
 
     def __lt__(self, a):
         return self.id < a.id
@@ -23,7 +22,7 @@ class Node:
 class Common(Node):
     x: float
     y: float
-    prc: int
+    omega: int
 
 
 # This represents both requests and physical CU
@@ -35,18 +34,14 @@ class CentralUnit(Common):
 # This represents both requests and physical DU
 @dataclass(frozen=True)
 class DistributedUnit(Common):
-    prb: int
-    ant: int
-    theta: int  # If is a request, make this to 0
+    eta: int
     type: int = 1
 
 
 @dataclass(frozen=True)
 class Edge:
-
     source: int
     target: int
-    bandwith: int
 
     def __lt__(self, a):
         return (self.source < a.source or
@@ -58,14 +53,21 @@ class Edge:
 
 @dataclass(frozen=True)
 class EdgePhysical(Edge):
-    distance: float
+    source: int
+    target: int
     type: int
+
+    def __lt__(self, a):
+        return (self.source < a.source or
+                (self.source == a.source and self.target < a.target))
+
+    def __eq__(self, a):
+        return self.source == a.source and self.target == a.target
 
 
 @dataclass(frozen=True)
 class EdgeVirtual(Edge):
-    delay: int
-
+    """ Documentation for edge virtual """
 
 class Topology:
     """Documentation for Topology
@@ -196,7 +198,7 @@ class BranchAndBound:
                                 sorted(self.physical.get_edges())):
             num_links += 1
             # The formula is the capacity minus the remainder
-            used_capacity += 1 - link2.bandwith/link1.bandwith
+            used_capacity += 1 - link2.bandwidth/link1.bandwidth
         return used_capacity / num_links
 
     def cost(self):
@@ -208,24 +210,20 @@ class BranchAndBound:
                 continue
             for target in self.physical.get_nodes():
                 aux = deepcopy(self)
-                if node.prc <= target.prc:
+                if node.prc < target.prc:
                     if isinstance(node, DistributedUnit) and isinstance(target, DistributedUnit):
-
-                        if (node.prb <= target.prb) and (node.ant <= target.ant):
-                            target_aux = DistributedUnit(target.id,
-                                                         target.label,
+                        target_aux = DistributedUnit(target.id,
                                                          target.x,
                                                          target.y,
                                                          target.prc - node.prc,
                                                          target.prb - node.prb,
                                                          target.ant - node.ant,
                                                          target.theta)
-                            aux.physical.modify_node_by_id(target_aux)
-                            aux.node_correspondance[node] = target_aux
-                            yield aux
+                        aux.physical.modify_node_by_id(target_aux)
+                        aux.node_correspondance[node] = target_aux
+                        yield aux
                     elif isinstance(node, CentralUnit) and isinstance(target, CentralUnit):
                         target_aux = CentralUnit(target.id,
-                                                 target.label,
                                                  target.x,
                                                  target.y,
                                                  target.prc - node.prc)
@@ -248,11 +246,11 @@ class BranchAndBound:
             else:
                 initial = self.edge_correspondance[link][-1].target
             for temp in self.physical.get_edge_by_source(initial):
-                if (not self.is_connected(initial, temp.target) and link.bandwith <= temp.bandwith):
+                if (not self.is_connected(initial, temp.target) and link.bandwidth < temp.bandwidth):
                     aux = deepcopy(self)
                     temp1 = EdgePhysical(temp.source,
                                          temp.target,
-                                         temp.bandwith - link.bandwith,
+                                         temp.bandwidth - link.bandwidth,
                                          temp.distance,
                                          temp.type)
                     if link not in self.edge_correspondance:

@@ -35,7 +35,7 @@ class FuncSplitLexer(sly.Lexer):
             print(f'Unknown keyword {t.value}')
 
 
-    @_(r'"\w+"')
+    @_(r'"(\w|\s)+"')
     def STRING(self, t):
         t.value = t.value[1:-1]
         return t
