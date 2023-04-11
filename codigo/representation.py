@@ -1,8 +1,49 @@
 # coding: utf-8
-from dataclasses import dataclass
+import csv
+from dataclasses import dataclass, field
 from copy import deepcopy
 from collections import defaultdict
+from typing import List
 
+
+CONFDATA = "/Users/krauser/Git_Repositories/luis_func/confData/linksParams.csv"
+SPLITPAR = "/Users/krauser/Git_Repositories/luis_func/confData/splitParams.csv"
+SPLIT_WEIGHTS = {
+    "SPLIT1" : 100,
+    "SPLIT4" : 50,
+    "SPLIT6" : 25,
+    "SLIT7_3": 1
+    }
+
+@dataclass
+class Split:
+    name: str = ''
+    prb: int  = 0
+    dr: float = 0.0
+    delay: float = 0.0
+    cu_cap: float = 0.0
+    du_cap: float = 0.0
+
+    def from_tuple(self, t):
+        self.name = f"{t[0]}"
+        self.prb = int(t[1])
+        self.dr = float(t[2])
+        self.delay = float(t[3])
+        self.cu_cap = float(t[4])
+        self.du_cap = float(t[5])
+
+@dataclass
+class ListSplit:
+    possible: List[Split] = field(default_factory=list)
+
+    def __post_init__(self):
+        with open(SPLITPAR, 'r') as f:
+            csv_data = csv.reader(f, delimiter='\t')
+            next(csv_data)
+            for line in csv_data:
+                a = Split()
+                a.from_tuple(line)
+                self.possible.append(a)
 
 @dataclass(frozen=True)
 class Node:
@@ -19,7 +60,7 @@ class Node:
 
 
 @dataclass(frozen=True)
-class Common(Node):
+class PhysicalNode(Node):
     x: float
     y: float
     omega: int
@@ -27,18 +68,36 @@ class Common(Node):
 
 # This represents both requests and physical CU
 @dataclass(frozen=True)
-class CentralUnit(Common):
+class PhysicalCentralUnit(PhysicalNode):
     type: int = 2
 
 
 # This represents both requests and physical DU
 @dataclass(frozen=True)
-class DistributedUnit(Common):
+class PhysicalDistributedUnit(PhysicalNode):
     eta: int
     type: int = 1
 
 
+
 @dataclass(frozen=True)
+class RequestCentralUnit(Node):
+    type: int = 2
+
+
+# This represents both requests and physical DU
+@dataclass(frozen=True)
+class RequestDistributedUnit(Node):
+    x: float
+    y: float
+    eta: int
+    rho: int
+    type: int = 1
+
+
+
+
+@dataclass
 class Edge:
     source: int
     target: int
@@ -51,33 +110,61 @@ class Edge:
         return self.source == a.source and self.target == a.target
 
 
-@dataclass(frozen=True)
+
+
+@dataclass
 class EdgePhysical(Edge):
-    source: int
-    target: int
     type: int
+    name: str = "mmWave"
+    delay: int = 200
+    dr_min: int = 500
+    dr_max: int = 2000
 
-    def __lt__(self, a):
-        return (self.source < a.source or
-                (self.source == a.source and self.target < a.target))
+    def reversed(self):
+        a = deepcopy(self)
+        a.source, a.target = a.target, a.source
+        return a
 
-    def __eq__(self, a):
-        return self.source == a.source and self.target == a.target
+    def __post_init__(self):
+        with open(f'{CONFDATA}', 'r') as f:
+            csv_data = csv.reader(f, delimiter='\t')
+            next(csv_data)
+            for line in csv_data:
+                if self.type == int(line[0]):
+                    self.name = line[1]
+                    self.delay = int(line[2])
+                    self.dr_min = int(line[3])
+                    self.dr_max = int(line[4])
+                    break
+            else:
+                raise Warning("Type of Edge incorrectly declared")
 
+    def bandwidth(self):
+        return self.dr_min
 
-@dataclass(frozen=True)
+@dataclass
 class EdgeVirtual(Edge):
     """ Documentation for edge virtual """
 
+    def reversed(self):
+        return EdgeVirtual( self.target, self.source)
+
 class Topology:
-    """Documentation for Topology
+    """
+    Documentation for Topology
 
     """
 
     def __init__(self, dictionary):
         self.dictionary = dictionary
-        self.dictionary["nodes"] = sorted(self.dictionary["nodes"])
-        self.dictionary["edges"] = sorted(self.dictionary["edges"])
+        self.adjacency = defaultdict(list)
+        self.id_nodes = dict()
+        for n in self.get_nodes():
+            self.id_nodes[n.id] = n
+        for e in self.get_edges():
+            s, t = e.source, self.id_nodes[e.target]
+            self.adjacency[s].append(t)
+
 
     def get_nodes(self):
         return self.dictionary["nodes"]
@@ -86,9 +173,7 @@ class Topology:
         return self.dictionary["edges"]
 
     def get_node_by_id(self, id):
-        for i in self.get_nodes():
-            if i.id == id:
-                return i
+        return self.id_nodes[id]
 
     def get_edge_by_source(self, source):
         for i in self.get_edges():
@@ -110,6 +195,7 @@ class Topology:
         else:
             raise Exception("Node not found")
         self.dictionary["nodes"][pos] = new_node
+        self.id_nodes[new_node.id] = new_node
 
 
 class BranchAndBound:
@@ -118,7 +204,7 @@ class BranchAndBound:
     """
 
     def __init__(self, physical, requests):
-        self.node_correspondance = defaultdict(list)
+        self.node_correspondance = dict()
         self.edge_correspondance = dict()
         self.original = deepcopy(physical)
         self.physical = deepcopy(physical)  # This is going to be modified
@@ -177,19 +263,22 @@ class BranchAndBound:
         return None
 
     def is_assigned(self):
-        return ( len(self.node_correspondance.keys()) == len(self.requests.get_nodes())
-                 and
-                 len(self.edge_correspondance.keys()) == len(self.requests.get_edges())
-                 )
+        return (self.first_link_unassigned() is None
+                and self.first_link_unassigned() is None)
+
     def DoC(self):
-        Agk = set()
-        for link, path in self.edge_correspondance.items():
-            Agk.update(set(path))
-        Pools = 0
-        for node in self.node_correspondance.values():
-            if isinstance(node, CentralUnit):
-                Pools += 1
-        return len(Agk)/Pools
+        d = defaultdict(int)
+        news, number = set(), 0
+        for node_r, value in self.node_correspondance.items():
+            node_p, level_split = value
+            d[level_split] += 1
+            if node_p not in news:
+                news.add(node_p)
+                number += 1
+        result = 0.0
+        for level in d:
+            result += d[level] * SPLIT_WEIGHTS[level]
+        return result / (number)
 
     def UoC(self):
         used_capacity = 0
@@ -198,7 +287,7 @@ class BranchAndBound:
                                 sorted(self.physical.get_edges())):
             num_links += 1
             # The formula is the capacity minus the remainder
-            used_capacity += 1 - link2.bandwidth/link1.bandwidth
+            used_capacity += 1 - link2.bandwidth()/link1.bandwidth()
         return used_capacity / num_links
 
     def cost(self):

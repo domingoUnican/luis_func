@@ -1,13 +1,18 @@
 import sly
-from codigo.representation import *
+from codigo.representation import EdgePhysical, EdgeVirtual
+from codigo.representation import RequestDistributedUnit, RequestCentralUnit
+from codigo.representation import PhysicalDistributedUnit, PhysicalCentralUnit
+from codigo.representation import Topology, defaultdict
 import pprint
+
 
 pp = pprint.PrettyPrinter(indent=4, width=80, underscore_numbers=False)
 
 
 class FuncSplitLexer(sly.Lexer):
-    tokens = {KEYWORD, NUMBER, STRING, GRAPH, NODE, EDGE, ID, TYPE, X, Y,
-               OMEGA, ETA, SOURCE, TARGET}
+    tokens = {KEYWORD, NUMBER, STRING, GRAPH,
+              NODE, EDGE, ID, TYPE, X, Y,
+              OMEGA, ETA, RHO, SOURCE, TARGET}
     literals = {'(', ')', '[', ']'}
     _dictionary = {"graph": "GRAPH",
                    "node": "NODE",
@@ -17,9 +22,11 @@ class FuncSplitLexer(sly.Lexer):
                    "x": "X",
                    "y": "Y",
                    "omega": "OMEGA",
-                   "eta": "ETA",                   
+                   "eta": "ETA",
                    "source": "SOURCE",
-                   "target": "TARGET"}
+                   "target": "TARGET",
+                   "rho" : "RHO"
+        }
 
     @_(r"[a-zA-Z]+")
     def KEYWORD(self, t):
@@ -34,12 +41,10 @@ class FuncSplitLexer(sly.Lexer):
         else:
             print(f'Unknown keyword {t.value}')
 
-
     @_(r'"(\w|\s)+"')
     def STRING(self, t):
         t.value = t.value[1:-1]
         return t
-
 
     @_(r"[0-9]+(\.[0-9]+)*")
     def NUMBER(self, t):
@@ -51,13 +56,12 @@ class FuncSplitLexer(sly.Lexer):
         self.lineno += (t.value.count('\n'))
 
 
-
-
 class FuncSplitParser(sly.Parser):
     debugfile = "physical.out"
     tokens = FuncSplitLexer.tokens
     shift = 1
-    special = {'id', 'type', 'omega', 'x', 'y', 'omega', 'eta', 'source', 'target'}
+    special = {'id', 'type', 'omega', 'x', 'y',
+               'omega', 'eta', 'source', 'target', "rho"}
 
     @_('GRAPH "[" elements "]"')
     def net(self, p):
@@ -75,39 +79,44 @@ class FuncSplitParser(sly.Parser):
 
     @_('elements edge')
     def elements(self, p):
-        p.elements['edges'].append(p.edge[0])
-        p.elements['edges'].append(p.edge[1])
+        p.elements['edges'].append(p.edge)
+        p.elements['edges'].append(p.edge.reversed())
         return p.elements
 
 
     @_('NODE "[" attrs "]"')
     def node(self, p):
+        Constructor, args = None, None
+        print(f"args={p.attrs}")
         if p.attrs["type"] == 1:
-            return DistributedUnit(p.attrs["id"],
-                                   p.attrs["x"],
-                                   p.attrs["y"],
-                                   p.attrs["omega"],
-                                   p.attrs["eta"])
+            if "rho" in p.attrs:
+                Constructor = RequestDistributedUnit
+                args = [p.attrs[j] for j in ("id", "x", "y", "eta", "rho", "type")]
+            else:
+                Constructor = PhysicalDistributedUnit
+                args = [p.attrs[j] for j in ("id", "x", "y", "omega", "eta", "type")]
         else:
-            return CentralUnit(p.attrs["id"],
-                                   p.attrs["x"],
-                                   p.attrs["y"],
-                                   p.attrs["omega"])
+            if "omega" in p.attrs:
+                Constructor = PhysicalCentralUnit
+                args = [p.attrs[j] for j in ("id", "x", "y", "omega", "type")]
+            else:
+                Constructor = RequestCentralUnit
+                args = [p.attrs[j] for j in ("id", "type")]
+        return Constructor(*args)
 
     @_('EDGE "[" attrs "]"')
     def edge(self, p):
         if "type" in p.attrs:
-            return EdgePhysical(p.attrs["source"],
                                 p.attrs["target"],
+            return EdgePhysical(p.attrs["source"],
                                 p.attrs["type"])
         else:
-            EdgeVirtual(p.attrs["target"],
-                         p.attrs["source"]) 
+            return EdgeVirtual(p.attrs["target"],
+                               p.attrs["source"])
 
     @_('')
     def attrs(self, p):
         return defaultdict(int)
-
 
     @_('attrs KEYWORD NUMBER')
     def attrs(self, p):
@@ -121,14 +130,16 @@ class FuncSplitParser(sly.Parser):
         p.attrs["label"] = f'{self.shift}_{p.STRING }'
         return p.attrs
 
+        print(f"Error: {p}")
+    def error(self, p):
+        print(p)
 
-if __name__ == '__main__':
-    DIR = "../instances"
-    f = open(f"{DIR}/madrid/madridTiny.gml", 'r')
+if True:
+    DIR = '/Users/krauser/Git_Repositories/luis_func/instances/'
+    f = open(f"{DIR}madrid/madridRequestTiny.gml", 'r')
     in_ = f.read()
-    
-    lexer, parser = FuncSplitLexer(), PhysicalParser()
-
+    lexer, parser = FuncSplitLexer(), FuncSplitParser()
+    lexer2 = FuncSplitLexer()
     parser.shift = 10
     j = parser.parse(lexer.tokenize(in_))
     # print('*'*80)
