@@ -4,16 +4,17 @@ from dataclasses import dataclass, field
 from copy import deepcopy
 from collections import defaultdict
 from typing import List
-
-
-CONFDATA = "/Users/krauser/Git_Repositories/luis_func/confData/linksParams.csv"
-SPLITPAR = "/Users/krauser/Git_Repositories/luis_func/confData/splitParams.csv"
+import os
+HOME = os.environ["HOME"]
+CONFDATA = f"{HOME}/Git_Repositories/luis_func/confData/linksParams.csv"
+SPLITPAR = f"{HOME}/Git_Repositories/luis_func/confData/splitParams.csv"
 SPLIT_WEIGHTS = {
-    "SPLIT1" : 100,
-    "SPLIT4" : 50,
-    "SPLIT6" : 25,
+    "SPLIT1": 100,
+    "SPLIT4": 50,
+    "SPLIT6": 25,
     "SLIT7_3": 1
     }
+
 
 @dataclass
 class Split:
@@ -32,6 +33,7 @@ class Split:
         self.cu_cap = float(t[4])
         self.du_cap = float(t[5])
 
+
 @dataclass
 class ListSplit:
     possible: List[Split] = field(default_factory=list)
@@ -44,6 +46,7 @@ class ListSplit:
                 a = Split()
                 a.from_tuple(line)
                 self.possible.append(a)
+
 
 @dataclass(frozen=True)
 class Node:
@@ -110,8 +113,6 @@ class Edge:
         return self.source == a.source and self.target == a.target
 
 
-
-
 @dataclass
 class EdgePhysical(Edge):
     type: int
@@ -141,6 +142,7 @@ class EdgePhysical(Edge):
 
     def bandwidth(self):
         return self.dr_min
+
 
 @dataclass
 class EdgeVirtual(Edge):
@@ -196,6 +198,12 @@ class Topology:
             raise Exception("Node not found")
         self.dictionary["nodes"][pos] = new_node
         self.id_nodes[new_node.id] = new_node
+
+    def all_paths(self, source, target, bandwidth, delay):
+        if source == target:
+            return []
+
+
 
 
 class BranchAndBound:
@@ -294,59 +302,9 @@ class BranchAndBound:
         return self.DoC() * (1 - self.UoC())
 
     def expand(self):
-        for node in self.requests.get_nodes():
-            if any(node.id <= i.id for i in self.node_correspondance):
-                continue
-            for target in self.physical.get_nodes():
-                aux = deepcopy(self)
-                if node.prc < target.prc:
-                    if isinstance(node, DistributedUnit) and isinstance(target, DistributedUnit):
-                        target_aux = DistributedUnit(target.id,
-                                                         target.x,
-                                                         target.y,
-                                                         target.prc - node.prc,
-                                                         target.prb - node.prb,
-                                                         target.ant - node.ant,
-                                                         target.theta)
-                        aux.physical.modify_node_by_id(target_aux)
-                        aux.node_correspondance[node] = target_aux
-                        yield aux
-                    elif isinstance(node, CentralUnit) and isinstance(target, CentralUnit):
-                        target_aux = CentralUnit(target.id,
-                                                 target.x,
-                                                 target.y,
-                                                 target.prc - node.prc)
-                        aux.physical.modify_node_by_id(target_aux)
-                        aux.node_correspondance[node] = target_aux
-                        yield aux
-        if len(self.node_correspondance.keys()) == len(self.requests.get_nodes()):
-            link = self.first_link_unassigned()
-            initial, destiny = 0, 0
-            if link not in self.edge_correspondance:
-                self.initialize_connect()
-                a = link.source
-                for temp1, temp2 in self.node_correspondance.items():
-                    if temp1.id == a:
-                        a = temp2
-                        break
-                else:
-                    raise Exception("Not found end")
-                initial = a.id
-            else:
-                initial = self.edge_correspondance[link][-1].target
-            for temp in self.physical.get_edge_by_source(initial):
-                if (not self.is_connected(initial, temp.target) and link.bandwidth < temp.bandwidth):
-                    aux = deepcopy(self)
-                    temp1 = EdgePhysical(temp.source,
-                                         temp.target,
-                                         temp.bandwidth - link.bandwidth,
-                                         temp.distance,
-                                         temp.type)
-                    if link not in self.edge_correspondance:
-                        aux.edge_correspondance[link] = [temp1]
-                    else:
-                        aux.edge_correspondance[link] += [temp1]
-                    destiny = temp.target
-                    aux.connect(initial, destiny)
-                    aux.physical.modify_edge_by_id(temp1)
-                    yield aux
+        for edge in self.requests.get_edges():
+            node_cu = self.requests.get_node_by_id(edge.source)
+            node_du = self.requests.get_node_by_id(edge.target)
+            if isinstance(node_cu, RequestDistributedUnit):
+                node_cu, node_du = node_du, node_cu
+            

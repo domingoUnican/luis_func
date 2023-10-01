@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from parser import *
+from parser import FuncSplitLexer, FuncSplitParser
 import os
 from itertools import product
 from time import time
@@ -30,12 +30,12 @@ if __name__ == '__main__':
         for name_req, name_net in product(files_req, files_net):
             f = open(os.path.join(root_net, name_net), 'r')
             in_ = f.read()
-            lexer, parser = FuncSplitLexer(), PhysicalParser()
+            lexer, parser = FuncSplitLexer(), FuncSplitParser()
             parser.shift = 0
             j0 = parser.parse(lexer.tokenize(in_))
             f = open(os.path.join(root_req, name_req), 'r')
             in_ = f.read()
-            lexer, parser = FuncSplitLexer(), RequestParser()
+            lexer, parser = FuncSplitLexer(), FuncSplitParser()
             parser.shift = 0
             j1 = parser.parse(lexer.tokenize(in_))
             temp = time()
