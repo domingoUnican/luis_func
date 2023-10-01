@@ -30,7 +30,7 @@ graph
     x 1250.4      
     y 1187.7      
     type 1      
-    omega 20      
+    omega 400      
     eta 200      
   ]
   node
@@ -39,7 +39,7 @@ graph
     x 1450.4      
     y 1187.7      
     type 1      
-    omega 20      
+    omega 400      
     eta 200      
   ]
   node
@@ -48,7 +48,7 @@ graph
     x 1150.4      
     y 1360.9      
     type 1      
-    omega 20      
+    omega 400    
     eta 200      
   ]
   node
@@ -57,7 +57,7 @@ graph
     x 1350.4      
     y 1360.9      
     type 1      
-    omega 20      
+    omega 400      
     eta 200      
   ]
   edge
